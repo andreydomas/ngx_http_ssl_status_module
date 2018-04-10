@@ -1,0 +1,5 @@
+ngx_module_type=HTTP
+ngx_module_name=ngx_http_ssl_status_module
+ngx_module_srcs="$ngx_addon_dir/ngx_http_ssl_status_module.c"
+
+. auto/module
