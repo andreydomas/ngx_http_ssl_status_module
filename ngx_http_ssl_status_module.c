@@ -396,6 +396,8 @@ static ngx_int_t ngx_http_ssl_status_module_init_worker(ngx_cycle_t *cycle) {
     ngx_http_ssl_status_timer.log = cycle->log;
     // attach ngx_http_core_main_conf_t struct to access all configured servers
     ngx_http_ssl_status_timer.data = cmcf;
+    // allows workers shutting down gracefully
+    ngx_http_ssl_status_timer.cancelable = 1;
     ngx_add_timer(&ngx_http_ssl_status_timer, STAT_POLL_INTERVAL);
     return NGX_OK;
 }
