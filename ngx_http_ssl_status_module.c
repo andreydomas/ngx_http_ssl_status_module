@@ -261,13 +261,14 @@ ngx_http_ssl_status(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
     ssllcf->shm_zone = ngx_shared_memory_add(cf, &value[1],
             SHM_SIZE,
             &ngx_http_ssl_status_module);
-    ssllcf->shm_zone->init = ngx_http_ssl_status_init_zone;
 
     if (ssllcf->shm_zone == NULL) {
         ngx_conf_log_error(NGX_LOG_ALERT, cf, 0,
                            "error eccessing shm zone %s", value[1].data);
         return NGX_CONF_ERROR;
     }
+
+    ssllcf->shm_zone->init = ngx_http_ssl_status_init_zone;
 
     // attach handler to generate reply on this location
     clcf = ngx_http_conf_get_module_loc_conf(cf, ngx_http_core_module);
