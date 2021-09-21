@@ -360,13 +360,14 @@ ngx_http_ssl_status_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
     sslscf->shm_zone = ngx_shared_memory_add(cf, &value[1],
             SHM_SIZE,
             &ngx_http_ssl_status_module);
-    sslscf->shm_zone->init = ngx_http_ssl_status_init_zone;
 
     if (sslscf->shm_zone == NULL) {
         ngx_conf_log_error(NGX_LOG_ALERT, cf, 0,
                            "error eccessing shm zone %s", value[1].data);
         return NGX_CONF_ERROR;
     }
+
+    sslscf->shm_zone->init = ngx_http_ssl_status_init_zone;
 
     return NGX_CONF_OK;
 }
