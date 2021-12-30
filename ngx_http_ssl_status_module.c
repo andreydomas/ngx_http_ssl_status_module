@@ -23,6 +23,7 @@
 
 
 #define SHM_SIZE 65536
+#define SHM_DEFAULT_NAME "default"
 
 
 typedef struct {
@@ -250,6 +251,19 @@ ngx_http_ssl_status_init_zone(ngx_shm_zone_t *shm_zone, void *data) {
 }
 
 
+static ngx_shm_zone_t* get_or_create_shm_zone(ngx_conf_t *cf, ngx_str_t *name) {
+    ngx_shm_zone_t* zone = ngx_shared_memory_add(cf, name, SHM_SIZE,
+                                                 &ngx_http_ssl_status_module);
+    if (zone == NULL) {
+        ngx_conf_log_error(NGX_LOG_ALERT, cf, 0,
+                "error accessing shm-zone \"%s\"", name->data);
+        return NULL;
+    }
+    zone->init = ngx_http_ssl_status_init_zone;
+    return zone;
+}
+
+
 /* Location configuration, ssl_status directive */
 static char *
 ngx_http_ssl_status(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
@@ -257,18 +271,11 @@ ngx_http_ssl_status(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
     ngx_http_ssl_status_loc_conf_t  *ssllcf = conf;
     ngx_str_t                       *value = cf->args->elts;
 
-    // get or create shm zone with name in value[1]
-    ssllcf->shm_zone = ngx_shared_memory_add(cf, &value[1],
-            SHM_SIZE,
-            &ngx_http_ssl_status_module);
+    ssllcf->shm_zone = get_or_create_shm_zone(cf, &value[1]);
 
     if (ssllcf->shm_zone == NULL) {
-        ngx_conf_log_error(NGX_LOG_ALERT, cf, 0,
-                           "error eccessing shm zone %s", value[1].data);
         return NGX_CONF_ERROR;
     }
-
-    ssllcf->shm_zone->init = ngx_http_ssl_status_init_zone;
 
     // attach handler to generate reply on this location
     clcf = ngx_http_conf_get_module_loc_conf(cf, ngx_http_core_module);
@@ -276,6 +283,7 @@ ngx_http_ssl_status(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
 
     return NGX_CONF_OK;
 }
+
 
 // add only delta (current - previous) to counter in shm
 // remember last (current) value for feature calls
@@ -356,19 +364,10 @@ ngx_http_ssl_status_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
     ngx_http_ssl_status_srv_conf_t  *sslscf = conf;
     ngx_str_t                       *value = cf->args->elts;
 
-    // get or create shm zone with name in value[1]
-    sslscf->shm_zone = ngx_shared_memory_add(cf, &value[1],
-            SHM_SIZE,
-            &ngx_http_ssl_status_module);
-
+    sslscf->shm_zone = get_or_create_shm_zone(cf, &value[1]);
     if (sslscf->shm_zone == NULL) {
-        ngx_conf_log_error(NGX_LOG_ALERT, cf, 0,
-                           "error eccessing shm zone %s", value[1].data);
         return NGX_CONF_ERROR;
     }
-
-    sslscf->shm_zone->init = ngx_http_ssl_status_init_zone;
-
     return NGX_CONF_OK;
 }
 
@@ -378,6 +377,10 @@ static void *ngx_http_ssl_status_create_srv_conf(ngx_conf_t *cf) {
     conf = ngx_palloc(cf->pool, sizeof(ngx_http_ssl_status_srv_conf_t));
     conf->prev_counters = ngx_pcalloc(cf->pool,
             sizeof(ngx_http_ssl_status_counters_t));
+    ngx_str_t default_zone_name = ngx_string(SHM_DEFAULT_NAME);
+    conf->shm_zone = get_or_create_shm_zone(cf, &default_zone_name);
+    if (conf->shm_zone == NULL)
+        return NULL;
     return conf;
 }
 

@@ -22,7 +22,8 @@ make
 
 Usage
 -----
-A server saves its SSL statistics to a zone defined by ssl_status_zone option.
+A server saves its SSL statistics to a zone defined by ssl_status_zone 
+(default: "default") option.
 Statistics can be accessed by a location marked by ssl_status option.
 Example:
 ```nginx
@@ -55,7 +56,6 @@ server {
 * Statistics for servers A and B (with summed up counters) will be available at 
 /stat1 of server C.
 * Statistics for server C will be available at /stat2 of server C.
-Stats will not be collected for servers without ssl_status_zone option.
 
 Each field name corresponds apropriate statistics function name: 
 [SSL_CTX_sess_*](https://www.openssl.org/docs/man1.0.2/ssl/SSL_CTX_sess_connect.html)
